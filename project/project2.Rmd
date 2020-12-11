@@ -1,7 +1,6 @@
 ---
 title: "Project 2"
 author: "SDS348 Fall 2020"
-date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output: html_document
 ---
 

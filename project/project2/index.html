@@ -189,7 +189,7 @@ for (i in 1:5000) {
         &quot;White&quot;, ]$checks)
 }
 mean(meansvector &lt; -0.6143611 | meansvector &gt; 0.6143611)</code></pre>
-<pre><code>## [1] 0.5008</code></pre>
+<pre><code>## [1] 0.5214</code></pre>
 <pre class="r"><code>t.test(data = Arrests, checks ~ colour)</code></pre>
 <pre><code>## 
 ##  Welch Two Sample t-test
@@ -266,8 +266,8 @@ samp_distn &lt;- replicate(5000, {
 })
 ## Estimated/boostrap SEs
 samp_distn %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
-<pre><code>##   (Intercept)        age   sexMale age:sexMale
-## 1   0.1875569 0.00786095 0.2003232 0.008301057</code></pre>
+<pre><code>##   (Intercept)         age   sexMale age:sexMale
+## 1   0.1897843 0.007905871 0.2016514 0.008343874</code></pre>
 <pre class="r"><code># Resampling residuals
 resid_resamp &lt;- replicate(5000, {
     new_resids &lt;- sample(resids, replace = TRUE)
@@ -278,7 +278,7 @@ resid_resamp &lt;- replicate(5000, {
 ## Estimated SEs
 resid_resamp %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
 <pre><code>##   (Intercept)         age   sexMale age:sexMale
-## 1   0.2113296 0.008464893 0.2221783 0.008889907</code></pre>
+## 1   0.2087553 0.008345456 0.2179039 0.008706193</code></pre>
 <pre class="r"><code>## Normal-theory SEs
 coeftest(fit_project)</code></pre>
 <pre><code>## 
@@ -306,7 +306,7 @@ coeftest(fit_project, vcov = vcovHC(fit_project))</code></pre>
 <pre class="r"><code>## Bootstrapped SEs (resampling residuals)
 resid_resamp %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
 <pre><code>##   (Intercept)         age   sexMale age:sexMale
-## 1   0.2113296 0.008464893 0.2221783 0.008889907</code></pre>
+## 1   0.2087553 0.008345456 0.2179039 0.008706193</code></pre>
 <p><em>The standard errors varied slightly, but the p-values that were significant before remained significance, and the p-values that were not significant still did not show significance. </em></p>
 </div>
 <div id="logistic-regression-model-predicting-binary-variable" class="section level2">
@@ -518,7 +518,7 @@ diags %&gt;% summarize_all(mean)</code></pre>
 ## [65] R6_2.4.1          lubridate_1.7.9   utf8_1.1.4        shape_1.4.5      
 ## [69] stringi_1.5.3     Rcpp_1.0.5        vctrs_0.3.2       dbplyr_1.4.4     
 ## [73] tidyselect_1.1.0  xfun_0.16</code></pre>
-<pre><code>## [1] &quot;2020-12-10 07:42:07 CST&quot;</code></pre>
+<pre><code>## [1] &quot;2020-12-11 00:19:56 CST&quot;</code></pre>
 <pre><code>##                                       sysname 
 ##                                       &quot;Linux&quot; 
 ##                                       release 

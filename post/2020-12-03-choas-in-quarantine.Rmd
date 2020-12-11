@@ -11,6 +11,7 @@ description: 'Quarantine started and life never slowed down.'
 *Here's a fun blog post about how COVID-19 basically ruined everything, but somehow we still got something out of it by learning how to code in python (sort of). In the simplest of terms, "COVID sucks". Online classes are hard enough as it is without a national pandemic yet somehow, we mastered up enough strength to finish out the semester, and for some of us, our college career. We can use a reticulate not only to tie together the fact that COVID does indeed suck, but also to show how R and Python communicate to share information.*
 
 ![If a puppy can wear a mask the right way, so can you!](/post/2020-12-03-choas-in-quarantine_files/IMG_6169.jpg)
+
 ## Reticulate
 
 *First, we add in the chunck of code from R.*
