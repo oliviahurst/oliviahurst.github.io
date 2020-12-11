@@ -18,13 +18,13 @@ description: 'Quarantine started and life never slowed down.'
 
 ```{R}
 library(reticulate)
-COVID <- "Please give me an A;"
+COVID <- "Please give me an A."
 ```
 
 *Next, we add the Python chunk and access the R defined obejct using r to tie the two together.*
 
 ```{python}
-sucks = "this is my last assignment before I graduate."
+sucks = "This is my last assignment before I graduate."
 print(r.COVID, sucks)
 ```
 

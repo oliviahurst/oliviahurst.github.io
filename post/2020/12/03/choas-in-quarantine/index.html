@@ -81,14 +81,14 @@
 <h2>Reticulate</h2>
 <p><em>First, we add in the chunck of code from R.</em></p>
 <pre class="r"><code>library(reticulate)
-COVID &lt;- &quot;Please give me an A;&quot;</code></pre>
+COVID &lt;- &quot;Please give me an A.&quot;</code></pre>
 <p><em>Next, we add the Python chunk and access the R defined obejct using r to tie the two together.</em></p>
-<pre class="python"><code>sucks = &quot;this is my last assignment before I graduate.&quot;
+<pre class="python"><code>sucks = &quot;This is my last assignment before I graduate.&quot;
 print(r.COVID, sucks)</code></pre>
-<pre><code>## Please give me an A; this is my last assignment before I graduate.</code></pre>
+<pre><code>## Please give me an A. This is my last assignment before I graduate.</code></pre>
 <p><em>The Python defined object can also be accessed in R using py$.</em></p>
 <pre class="r"><code>cat(c(COVID,py$sucks))</code></pre>
-<pre><code>## Please give me an A; this is my last assignment before I graduate.</code></pre>
+<pre><code>## Please give me an A. This is my last assignment before I graduate.</code></pre>
 </div>
 <div id="but-really-though..." class="section level2">
 <h2>But Really Though...</h2>
