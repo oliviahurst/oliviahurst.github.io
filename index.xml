@@ -6,34 +6,32 @@
     <description>Recent content on Olivia Hurst</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
-    <lastBuildDate>Tue, 01 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 03 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Choas in Quarantine</title>
+      <link>/post/2020/12/03/choas-in-quarantine/</link>
+      <pubDate>Thu, 03 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2020/12/03/choas-in-quarantine/</guid>
+      <description>Here&#39;s a fun blog post about how COVID-19 basically ruined everything, but somehow we still got something out of it by learning how to code in python (sort of). In the simplest of terms, &amp;quot;COVID sucks&amp;quot;. Online classes are hard enough as it is without a national pandemic yet somehow, we mastered up enough strength to finish out the semester, and for some of us, our college career. We can use a reticulate not only to tie together the fact that COVID does indeed suck, but also to show how R and Python communicate to share information.</description>
+    </item>
+    
     <item>
       <title>Project 1</title>
       <link>/project/project1/</link>
-      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/project/project1/</guid>
-      <description> Test Project 1  </description>
+      <description>Olivia Hurst ofh78  Introduction I selected these two datasets because of my sister&#39;s interest soccer and my interest in whether or not the team a person plays on, their postition, or how well the team is playing has anything to do with a player&#39;s average salary.   Tidying library(tidyverse) library(cluster) salaries_dataset &amp;lt;- read_csv(&amp;quot;mls-salaries-2017.csv&amp;quot;) club_games &amp;lt;- read_csv(&amp;quot;new club games.csv&amp;quot;) avg_salary &amp;lt;- salaries_dataset %&amp;gt;% group_by(club, position) %&amp;gt;% summarise(avg_base_salary = mean(base_salary), avg_guaranteed_comp = mean(guaranteed_compensation)) # without position salary_without_position &amp;lt;- salaries_dataset %&amp;gt;% group_by(club) %&amp;gt;% summarise(avg_base_salary = mean(base_salary), avg_guaranteed_comp = mean(guaranteed_compensation)) club_games %&amp;gt;% pivot_longer(cols = starts_with(&amp;quot;goal&amp;quot;), names_to = &amp;quot;goals&amp;quot;, values_to = &amp;quot;goals_scored&amp;quot;) %&amp;gt;% pivot_wider(names_from = &amp;quot;goals&amp;quot;, values_from = &amp;quot;goals_scored&amp;quot;) ## # A tibble: 22 x 9 ## club games_played wins loses ties points goals_for goals_against ## &amp;lt;chr&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; ## 1 ATL 34 15 9 10 55 70 40 ## 2 CHI 34 16 11 7 55 61 47 ## 3 COL 34 9 19 6 33 31 51 ## 4 CLB 34 16 12 6 54 53 49 ## 5 DC 34 9 20 5 32 31 60 ## 6 DAL 34 11 10 13 46 48 48 ## 7 HOU 34 13 10 11 50 57 45 ## 8 KC 34 12 9 13 49 40 29 ## 9 LA 34 8 18 8 32 45 67 ## 10 MNUFC 34 10 18 6 36 47 70 ## 11 MTL 34 11 17 6 39 52 58 ## 12 NE 34 13 15 6 45 53 61 ## 13 NYCFC 34 16 9 9 57 56 43 ## 14 NYRB 34 14 12 8 50 53 47 ## 15 ORL 34 10 15 9 39 39 58 ## 16 POR 34 15 11 8 53 60 50 ## 17 PHI 34 11 14 9 42 50 47 ## 18 RSL 34 13 15 6 45 49 55 ## 19 SJ 34 13 14 7 46 39 60 ## 20 SEA 34 14 9 11 53 52 39 ## 21 TOR 34 20 5 9 69 74 37 ## 22 VAN 34 15 12 7 52 50 49 ## # … with 1 more variable: goal_difference &amp;lt;dbl&amp;gt; I created two main datasets to utilize.</description>
     </item>
     
     <item>
       <title>Project 2</title>
       <link>/project/project2/</link>
-      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/project/project2/</guid>
-      <description> Test Project 2  </description>
-    </item>
-    
-    <item>
-      <title>Hello R Markdown</title>
-      <link>/post/2015/07/23/hello-r-markdown/</link>
-      <pubDate>Thu, 23 Jul 2015 21:13:14 -0500</pubDate>
-      
-      <guid>/post/2015/07/23/hello-r-markdown/</guid>
-      <description>R Markdown This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
-You can embed an R code chunk like this:
-summary(cars) ## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 26.00 ## Median :15.0 Median : 36.00 ## Mean :15.4 Mean : 42.98 ## 3rd Qu.</description>
+      <description>Olivia Hurst ofh78  Introduction Arrests &amp;lt;- read_csv(&amp;quot;Arrests.csv&amp;quot;) Arrests &amp;lt;- Arrests %&amp;gt;% mutate(released = ifelse(released == &amp;quot;No&amp;quot;, 0, 1)) I am using a dataset named &amp;quot;Arrests&amp;quot; which originally had 8 variables and has 5,226 observations. This dataset is measuring different statistics about arrests that were made in Toronto for marijuana possession. Some of the main variables I will focus on are &amp;quot;released&amp;quot; determining whether or not the person was released with a summons (this will be my binary variable), &amp;quot;colour&amp;quot; which categorizes the people arrested into being black or white race, and &amp;quot;checks&amp;quot; which is a numeric vector summarizing the about of times the person&#39;s name appears in a police database.</description>
     </item>
     
     <item>

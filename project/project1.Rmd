@@ -1,8 +1,180 @@
 ---
 title: "Project 1"
-author: "Me"
-date: "2020-12-01"
-output: html_document
+author: "SDS348 Fall 2020"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
 ---
 
-## Test Project 1
+```{r global_options, include=FALSE}
+#DO NOT EDIT THIS CHUNK OR ANYTHING ABOVE IT!
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=50), R.options=list(max.print=100,dplyr.print_max=100))
+```
+
+## Olivia Hurst ofh78
+
+
+---
+
+## Introduction
+
+##### I selected these two datasets because of my sister's interest soccer and my interest in whether or not the team a person plays on, their postition, or how well the team is playing has anything to do with a player's average salary. 
+
+
+
+## Tidying
+
+
+```{R}
+library(tidyverse)
+library(cluster)
+salaries_dataset <- read_csv("mls-salaries-2017.csv")
+club_games <- read_csv("new club games.csv")
+
+avg_salary <- salaries_dataset %>% group_by(club, position) %>% summarise(avg_base_salary = mean(base_salary), avg_guaranteed_comp = mean(guaranteed_compensation))
+
+#without position
+salary_without_position <- salaries_dataset %>% group_by(club) %>% summarise(avg_base_salary = mean(base_salary), avg_guaranteed_comp = mean(guaranteed_compensation))
+
+club_games %>% pivot_longer(cols=starts_with("goal"),names_to = "goals", values_to="goals_scored") %>% pivot_wider(names_from="goals",values_from="goals_scored")
+```
+*I created two main datasets to utilize. One absent of the positions so there are not repeats of the clubs or any other variable from the second dataset I chose. I demonstrated my knowledge of the pivot functions as I will not need them until later on. I decided to leave the players names out of the first dataset as I deemed it was not relavent towards the data I was collecting. *
+
+## Joining/Merging
+
+
+```{R}
+MLS_fulldata <- full_join(avg_salary, club_games, by = c(club = "club"))
+
+#without position
+MLS_position_removed <- full_join(salary_without_position, club_games, by = c(club = "club"))
+```
+*I decided to do a full join so I could utilize all of the variables from my datasets. No additional variables were dropped during this merge.*
+
+## Wrangling
+
+
+```{R}
+# position w highest avg salary
+MLS_fulldata %>% group_by(position) %>% summarize(avg_sal = mean(avg_base_salary)) %>% filter(avg_sal == max(avg_sal))
+
+# club w highest avg salary
+MLS_fulldata %>% group_by(club) %>% summarize(avg_sal = mean(avg_base_salary)) %>% filter(avg_sal == max(avg_sal))
+
+#sum, median, sd, mean avg comp per club
+MLS_fulldata %>% group_by(club) %>% summarize(sum_comp = sum(avg_guaranteed_comp), med_comp = median(avg_guaranteed_comp), sd_comp = sd(avg_guaranteed_comp), mean_comp = mean(avg_guaranteed_comp))
+
+#position in each club w highest avg
+MLS_fulldata %>% group_by(club, position) %>% summarize(avg_sal = mean(avg_base_salary)) %>% filter(avg_sal == max(avg_sal))
+
+#club w highest avg for each position
+MLS_fulldata %>% group_by(position, club) %>% summarize(avg_sal = mean(avg_base_salary)) %>% filter(avg_sal == max(avg_sal))
+
+#highest avg base sal for midfielder
+MLS_fulldata %>% filter(position == "M") %>% group_by(position) %>% summarize (avg_sal = mean(avg_base_salary)) %>% arrange(desc(avg_sal))
+
+#highest avg bas sal for a forward
+MLS_fulldata %>% filter(position == "F") %>% group_by(position) %>% summarize (avg_sal = mean(avg_base_salary)) %>% arrange(desc(avg_sal))
+
+#percent of games won variable
+percentwins_fulldata <- MLS_fulldata %>% group_by(club) %>% mutate(percent_wins=(wins * 100)/games_played) %>% summarize(avg_percent = mean(percent_wins))
+
+#percent games won veriable without position
+percentwins_position_removed <- MLS_position_removed %>% group_by(club) %>% mutate(percent_wins=(wins * 100)/games_played)
+
+#mean percent wins
+#percentwins_fulldata %>% group_by(club) %>% summarize(avg_percent = mean(percent_wins))
+
+#correlation between avg base salary and guaranteed comp
+#percentwins_fulldata %>% summarize(cor(avg_base_salary, avg_guaranteed_comp, use = "pair"))
+
+
+
+```
+*Each of the processes I attempted to complete are labled above the code.*
+
+## Visualizing 
+
+
+```{R}
+#corr heat map
+cormat <- MLS_position_removed %>% select(-c(games_played)) %>% select_if(is.numeric) %>% cor(use="pair")
+
+cormat %>% as.data.frame %>% rownames_to_column("Var1") %>% pivot_longer(-1, "Var2", values_to = "Correlation") %>% ggplot(aes(Var1, Var2, fill= Correlation)) + geom_tile() + theme(axis.text.x = element_text(angle = 90))
+
+#two polished plots w ggplot
+
+MLS_fulldata %>% group_by( club, position) %>% summarise( mean_sal = mean(avg_base_salary)) %>% ggplot(aes(x = club, y= position, fill = mean_sal)) + geom_tile(colour = "white") + scale_fill_gradient(low = "orange", high = "blue", name = "Base Salary Range") +  ylab("Player Position") +  xlab("Soccer Club") + ggtitle(paste("Check Trends in Average Base Salary")) + theme(axis.text.x = element_text(angle = 90)) 
+
+#plot 2
+
+MLS_fulldata %>% ggplot(aes(x = avg_base_salary, y = club, 
+    color = position)) + geom_point() + stat_summary(fun = mean, color = "black", position = position_dodge(0.75),  geom = "point", shape = 18, size = 2, show.legend = FALSE) + ggtitle("Base Salary vs Soccer Club per Position") + ylab("Club") + 
+    xlab("Base Salary($)") + scale_x_continuous(breaks = seq(0, 2000000, 250000))
+
+
+
+```
+
+
+*It is apparent that there is a correlation between the the base salary and guaranteed compensation. Also, a strong correlation between wins and points. The other graphs show that TOR has the highest average base salary as does the position of forward with midfileder close behind. *
+
+## Dimensionality Reduction
+
+
+```{R}
+#k-means, PAM, PCA
+#stepone <- percentwins_position_removed %>% select(-games_played, -loses, -ties, -goals_for, -goals_against, -points, -percent_wins)
+#steptwo <- stepone %>% select_if(is.numeric) %>% scale
+#rownames(steptwo) <- stepone$club
+#step_pca <- princomp(steptwo)
+#names(step_pca)
+
+#clust_dat<- MLS_fulldata %>% select(avg_base_salary, wins)
+#set.seed(348)
+#kmeans1 <- clust_dat %>% kmeans(3)
+#kmeansclust<-clust_dat%>%mutate(cluster=as.factor(kmeans1$cluster))
+#kmeansclust%>%ggplot(aes(avg_base_salary,wins,color=club))+geom_point()
+#wss<-vector()
+#for(i in 1:10){ temp<- MLS_fulldata %>% select(avg_base_salary, wins) %>% kmeans(i)
+#wss[i]<-MLS_fulldata$avg_guaranteed_salary}
+
+#ggplot()+geom_point(aes(x=1:10,y=wss))+geom_path(aes(x=1:10,y=wss))+ xlab("clusters")+scale_x_continuous(breaks=1:10)
+
+#sil_width<-vector() 
+#for(i in 2:10){  kms <- kmeans(clust_dat,centers=i) sil <- silhouette(kms$cluster,dist(clust_dat)) sil_width[i]<-mean(sil[,3]) }
+#ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+
+#pam1<-clust_dat %>% pam(k=3)
+#pamclust<-clust_dat %>% mutate(cluster=as.factor(pam1$clustering))
+#pamclust %>% ggplot(aes(avg_base_salary,wins,color=club))+geom_point()
+#amclust %>% group_by(cluster) %>% summarize_if(is.numeric,mean,na.rm=T)
+#MLS_fulldata %>% slice(pam1$id.med)
+#pam1$silinfo$avg.width
+#plot(pam1,which=2)
+#sil_width<-vector()
+#for(i in 2:10){  
+#  pam_fit <- pam(gower1, diss = TRUE, k = i)  
+#  sil_width[i] <- pam_fit$silinfo$avg.width  
+#}
+#ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+#pam3 <- pam(gower1, k = 3, diss = T)
+#plot(pam3,which=2)
+#ggpairs(dat2, columns=1:7, aes(color=as.factor(pam3$clustering)))
+```
+
+
+*I could not fix the error in my code. *
+
+
+
+
+```{R, echo=F}
+## DO NOT DELETE THIS BLOCK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```

@@ -1,8 +1,236 @@
 ---
 title: "Project 2"
-author: "Me"
-date: "2020-12-01"
+author: "SDS348 Fall 2020"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output: html_document
 ---
 
-## Test Project 2
+```{r global_options, include=FALSE}
+#DO NOT EDIT THIS CHUNK OR ANYTHING ABOVE IT!
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=50), R.options=list(max.print=100,dplyr.print_max=100))
+library(tidyverse)
+library(dplyr)
+library(lmtest)
+library(sandwich)
+library(pROC)
+library(plotROC)
+library(glmnet)
+library(rstatix)
+```
+
+## Olivia Hurst ofh78
+
+## Introduction
+
+```{R}
+Arrests <- read_csv("Arrests.csv")
+Arrests <- Arrests %>% mutate(released = ifelse(released == "No",0,1))
+```
+
+*I am using a dataset named "Arrests" which originally had 8 variables and has 5,226 observations. This dataset is measuring different statistics about arrests that were made in Toronto for marijuana possession. Some of the main variables I will focus on are "released" determining whether or not the person was released with a summons (this will be my binary variable), "colour" which categorizes the people arrested into being black or white race, and "checks" which is a numeric vector summarizing the about of times the person's name appears in a police database. Other variables used from this dataset include the year of the arrest, age and sex of the arrestee, and whether or not the arrestee was a citizen or whether they were employeed. *
+
+## 1. MANOVA
+
+```{R}
+#MANOVA
+arrests_manova<-manova(cbind(year, age, checks)~colour, data=Arrests)
+summary(arrests_manova)
+#Univariate ANOVAs
+summary.aov(arrests_manova)
+Arrests%>%group_by(colour)%>%summarize(mean(year), mean(age), mean(checks))
+#Post-Hoc t-tests
+pairwise.t.test(Arrests$age, Arrests$colour, p.adj = "none")
+pairwise.t.test(Arrests$checks, Arrests$colour, p.adj = "none")
+#MANOVA Assumptions
+group_assumptions <- Arrests$colour
+DVs <- Arrests %>% select(year, age, checks)
+sapply(split(DVs, group_assumptions), mshapiro_test)
+box_m(DVs, group_assumptions)
+lapply(split(DVs,group_assumptions), cov)
+```
+
+*A one-way MANOVA was conducted to determine the effect of the skin colour of people arrested (Black or White) on three dependent variables (Year, Age, and Checks). Significant differences were found among the two skin colours for at least one of the dependent variables, Pillai trace = 0.03, pseudo F(3, 5222) = 56.96, p < 0.0001. Univariate ANOVAs for each dependent variable were conducted as follow-up tests to the MANOVA, using the Bonferroni method for controlling Type I error rates for multiple comparisons. The univariate ANOVAs for Age and Checks were also significant, pseudo F(1, 5224) = 23.78, p < 0.0001 and pseudo F(1, 5224) = 159.3, p < 0.0001. Post hoc analysis was performed conducting pairwise comparisons to confirm which coloured people differed in age and checks. Both colours were found to differ significantly from each other in terms of age and checks after adjusting for multiple comparisons (bonferroni α = .05/8 = 0.00625). Ultimately, I performed 1 MANOVA, 3 ANOVAs, and 4 pairwise t-tests. Even adjusting the significance level per the bonferroni correlation, a significant difference was found between black and white skin colour for both age and checks. Based on the assumption tests run, it is not likely that the assumptions for the MANOVA were met. The p-value was less than 0.05 and rejected the null when testing the multivariate normality, homogeneity, and many covarience matricies. *
+
+## 2. Randomization Test
+
+```{R}
+Arrests %>% summarize(mean(checks[colour=="Black"])-mean(checks[colour=="White"]))
+
+Arrests%>%group_by(colour)%>%summarize(s=mean(checks))%>%summarize(diff(s))
+
+meansvector<-vector()
+for(i in 1:5000){
+holdsample <- Arrests %>% sample_frac(replace=T) 
+meansvector[i] <- mean(holdsample[holdsample$colour=="Black",]$checks) - mean(holdsample[holdsample$colour=="White",]$checks) 
+}
+mean(meansvector < -0.6143611 | meansvector > 0.6143611)
+t.test(data=Arrests,checks~colour)
+{hist(meansvector,main="",ylab=""); abline(v = c(0.6143611, -0.6143611),col="red")}
+```
+
+*H0: Mean number of checks is the same for black vs white coloured people. HA: Mean number of checks is different for black vs white coloured people. The mean shows the p-value is > 0.05, so we fail to reject H0. However, when compared to the t-test, the p-value is < 0.05, and the result is seen as significant. *
+
+## 3. Linear Regression Model
+
+```{R}
+Arrests$age_c <- Arrests$age - mean(Arrests$age)
+fit_project<-lm(checks~age_c*sex, data = Arrests)
+coef(fit_project)
+#Plot
+Arrests %>% ggplot(aes(age_c,checks,color=sex))+geom_point()+geom_smooth(method="lm", se=F)
+#regression assumptions
+resids<-fit_project$residuals
+fitvals<-fit_project$fitted.values
+plot(fitvals,resids); abline(h=0, col='red')
+par(mfrow=c(1,2)); hist(resids); qqnorm(resids); qqline(resids, col='red')
+bptest(fit_project)
+#Robust standard errors
+coeftest(fit_project, vcov = vcovHC(fit_project)) 
+#Proportion of variation
+(sum((Arrests$checks-mean(Arrests$checks))^2)-sum(fit_project$residuals^2))/sum((Arrests$checks-mean(Arrests$checks))^2)
+```
+
+*For every 1 unit increase in age, there is a 0.027 unit increase in checks. For people with average age, Males have average/predicted checks that are 0.585 greater than females. 1.101 is the mean/predicted number of checks for females of average age. -0.003 represents the difference in slopes. My model explains 2.95% of vaiability in checks. *
+
+## 4. Bootstrapped Regression Model
+
+```{R}
+#Resampling observations
+boot_dat<- sample_frac(Arrests, replace=T)
+samp_distn<-replicate(5000, {
+  boot_dat <- sample_frac(Arrests, replace=T) #take bootstrap sample of rows
+  fit_project_bs <- lm(checks~age*sex, data=boot_dat) #fit model on bootstrap sample
+  coef(fit_project_bs) #save coefs
+}) 
+## Estimated/boostrap SEs
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd) 
+#Resampling residuals
+  resid_resamp<-replicate(5000,{
+    new_resids<-sample(resids,replace=TRUE) 
+    Arrests$new_y<-fitvals+new_resids 
+    fit_project_bs<-lm(new_y~age*sex,data=Arrests) 
+    coef(fit_project_bs) 
+}) 
+## Estimated SEs
+resid_resamp%>%t%>%as.data.frame%>%summarize_all(sd)
+## Normal-theory SEs
+coeftest(fit_project)
+## Heteroskedasticity Robust SEs
+coeftest(fit_project, vcov=vcovHC(fit_project))
+## Bootstrapped SEs (resampling residuals)
+resid_resamp%>%t%>%as.data.frame%>%summarize_all(sd)
+```
+
+*The standard errors varied slightly, but the p-values that were significant before remained significance, and the p-values that were not significant still did not show significance. *
+
+## 5. Logistic Regression Model Predicting Binary Variable 
+
+```{R}
+fit_project2<-glm(released~colour+checks, data=Arrests, family="binomial")
+prob <- predict(fit_project2,type="response")
+coeftest(fit_project2)
+exp(coef(fit_project2))
+
+class_diag<-function(probs,truth){
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  prediction<-ifelse(probs>.5,1,0)
+  acc=mean(truth==prediction)
+  sens=mean(prediction[truth==1]==1)
+  spec=mean(prediction[truth==0]==0)
+  ppv=mean(truth[prediction==1]==1)
+  f1=2*(sens*ppv)/(sens+ppv)
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+  data.frame(acc,sens,spec,ppv,auc)
+}
+
+class_diag(prob,Arrests$released)
+auc(Arrests$released,prob)
+#confusion matrix
+table(predict=as.numeric(prob>.5),truth=Arrests$released)%>%addmargins
+Arrests$logit<-predict(fit_project2,type="link")
+#density plot
+Arrests$logit<-predict(fit_project2,type="link")
+Arrests%>%ggplot()+geom_density(aes(logit,color=released,fill=released), alpha=.4)+
+geom_vline(xintercept=0)+xlab("logit (log-odds)")+
+  geom_rug(aes(logit,color=released))
+#ROC and AUC
+ROCplot<-ggplot(Arrests)+geom_roc(aes(d=released,m=prob), n.cuts=0) 
+ROCplot
+calc_auc(ROCplot)
+```
+
+*Controlling for checks, white coloured people have significantly higher odds of being released as the log-odds increases by 0.544 and multiplies odds by a factor of 1.723. Controlling for colour, going up 1 check decreases log-odds by 0.404 and multiplies odds by a factor of 0.668, having a negative impact on odds of being released. The sensitivity or TPR is 4304/4334 = 0.993. The specificity or TNR is 23/892 = 0.026. The precision (PPV) is 4304/5173 = 0.832.The accuracy is 0.828 but can be easily duped so we use AUC. The ROC curve allows us to visualize the trade-off between sensitivity and specificity. Our AUC is 0.695 which is in the poor range. *
+
+## 6. Logistic Regression Predicting Binary from ALL Variables 
+
+```{R}
+fit_project_last<-glm(released~., data=Arrests, family="binomial")
+prob<-predict(fit_project_last,type="response")
+class_diag(prob,Arrests$released)
+
+#10-fold CV
+set.seed(1234)
+k=10
+data <- Arrests %>% sample_frac #put rows of dataset in random order
+folds <- ntile(1:nrow(data),n=10) #create fold labels
+diags<-NULL
+for(i in 1:k){
+  train <- data[folds!=i,] #create training set (all but fold i)
+  test <- data[folds==i,] #create test set (just fold i)
+  truth <- test$released #save truth labels from fold i
+  
+  fit <- glm(released~., data=train, family="binomial")
+  probs <- predict(fit, newdata=test, type="response")
+  
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+summarize_all(diags,mean) #AUC about the same
+
+#lasso
+y<-as.matrix(Arrests$released) 
+x<-model.matrix(released~.,data=Arrests)[,-1]
+x<-scale(x)
+glm(y~x,family=binomial)
+cv <- cv.glmnet(x,y, family="binomial") 
+#make a plot of the coefficients for different values of lambda
+{plot(cv$glmnet.fit, "lambda", label=TRUE); abline(v = log(cv$lambda.1se)); abline(v = log(cv$lambda.min),lty=2)}
+cv<-cv.glmnet(x,y,family="binomial")
+lasso<-glmnet(x,y,family="binomial",lambda=cv$lambda.1se)
+coef(lasso)
+#new 10 fold CV
+set.seed(1234)
+k=10
+data <- Arrests %>% sample_frac 
+folds <- ntile(1:nrow(data),n=10) 
+diags<-NULL
+for(i in 1:k){
+  train <- data[folds!=i,] 
+  test <- data[folds==i,] 
+  truth <- test$released 
+  fit <- glm(released~employed+citizen+logit, 
+             data=train, family="binomial")
+  probs <- predict(fit, newdata=test, type="response")
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+diags%>%summarize_all(mean) 
+```
+
+*Our in-sample AUC is 0.725 in the fair range. The out of sample AUC is 0.719 which is also i nthe fair range and is slightly lower than the in-sample AUC. In fact, all of the out of sample matrics, aside from accuracy and sensibility which went slightly up, are slightly lower than in the in-sample matrics. The variables that were retained from the lasso are employment, citizenshop, and the logit variable. The final AUC is 0.723 which moved slightly up again making it 0.002 lower than the in-sample AUC and 0.004 higher than the out of sample AUC.  *
+
+
+```{R, echo=F}
+## DO NOT DELETE THIS BLOCK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```
